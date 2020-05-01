@@ -1,0 +1,13 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}OAuth Helper - Home{% endblock %}
+
+{% block content %}
+    <h1>OAuth Client Helper</h1>
+    <p>This is here to help make getting, setting and pushing OAuth tokens easier</p>
+    <p>TODO: add some more notes about WTF is actually going on here....</p>
+
+    <a class="btn btn-primary" href="/add-client" role="button">New Client ID</a>
+
+    <h3>List of current clients configured and status summary</h3>
+    <pre><code>{{ client_data }}</code></pre>
+{% endblock %}

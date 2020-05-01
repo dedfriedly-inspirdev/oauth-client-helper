@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+  redis:
+    image: redis:5
+
+  oauth-helper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    depends_on:
+      - redis
+    volumes:
+      - type: bind
+        source: ./src
+        target: /usr/local/src
+        consistency: consistent
+    logging:
+      driver: json-file
+    command: ["debug"]

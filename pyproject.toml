@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "tdapi_oath2_redir"
+version = "1.0.0"
+description = ""
+authors = ["Dedric Friedly <dedric.friedly@inspiredev-llc.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+requests = "^2.23.0"
+flask = "^1.1.2"
+redis = "^3.4.1"
+pyopenssl = "^19.1.0"
+flask-talisman = "^0.7.0"
+dynaconf = {extras = ["all"], version = "^2.2.3"}
+flask-session = "^0.3.1"
+filelock = "^3.0.12"
+flask-wtf = "^0.14.3"
+flask-bootstrap = "^3.3.7"
+
+[tool.poetry.dev-dependencies]
+ipython = "^7.13.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

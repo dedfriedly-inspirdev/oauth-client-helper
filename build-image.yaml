@@ -1,0 +1,18 @@
+version: "3.7"
+# This is a base service used to build the airflow docker image we will use
+services:
+  oauth_client_helper_build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+    image: inspiredev/oauth_client_helper:0.2.0
+    command: exit 0  # I don't want this to be run directly kinda ever
+
+  oauth_client_helper_dev_build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    image: inspiredev/oauth_client_helper:0.2.0-dev
+    command: exit 0  # I don't want this to be run directly kinda ever
