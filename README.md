@@ -6,6 +6,8 @@ This offers a VERY OPINIONATED solution utilizing REDIS (required), a Flask app 
 
 This has the intention of working to create a token cache per user (or per docker instance) that holds all the API authentication information needed for each of the API Clients the user wants.  It's important to view this as user specific because the auth codes generated here give underlying systems access AS THE USER!  Take a moment to understand what you're doing and who has access to what.  Codes are published to redis, BUT they are not sent to a specific USERS redis, so if you have access to "this" redis DB, you'd have access to the codes.  There are no tokens ever stored in the token cache file, so that's nice.
 
+And now that I have a way to store it, I wanted as simple as possible (few bells/whistles of course) web handler to be able to initiate the OAuth sequence (generate the auth URL + querystring params) and capture the redirect (assuming successful auth).  The web framework here currently runs on 0.0.0.0:8080, however you'd connect over 127.0.0.1:8080 (use the IP versus localhost!)
+
 Def check out the python packages [README](src/oauth_client/README.md)
 
 ## Motivation
@@ -41,4 +43,5 @@ Oh yeah, this is one of those projects where the guy that posted it opines on kn
  * Potentially look at allowing user to generate access tokens in the webapp.  As of right now I'm not doing any of that due to complications around query string params and response param differences between endpoints.  I'm generally thinking this is focused on the auth code helper and you'd custom spin code for getting and saving access tokens
  * There is NO update or modify features in the app currently.  More probably out of laziness, but if you need to edit, edit the file statically on the drive.
  * Would be nice to allow SSL cert files to be defined via env vars
+ * Would be nice to allow IP listening and port in settings
  * Full disclosure, haven't tested building the py pkg just yet
