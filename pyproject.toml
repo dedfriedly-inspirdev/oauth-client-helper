@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tdapi_oath2_redir"
+name = "oauth-client-helper"
 version = "1.0.0"
 description = ""
 authors = ["Dedric Friedly <dedric.friedly@inspiredev-llc.com>"]
