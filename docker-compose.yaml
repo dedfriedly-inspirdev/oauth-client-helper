@@ -3,6 +3,8 @@ version: '3.7'
 services:
   redis:
     image: redis:5
+    ports:
+      - "6379:6379"
 
   oauth-helper:
     build:
@@ -11,6 +13,8 @@ services:
       target: dev
     depends_on:
       - redis
+    ports:
+      - "8080:8080"
     volumes:
       - type: bind
         source: ./src
@@ -18,4 +22,4 @@ services:
         consistency: consistent
     logging:
       driver: json-file
-    command: ["debug"]
+    command: ["auth"]

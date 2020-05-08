@@ -1,0 +1,17 @@
+{% extends "add_client.j2" %}
+{% block title %}OAuth Helper - Client Detail{% endblock %}
+
+{% block my_header %}
+    <h1>OAuth Client Detail Page</h1>
+{% endblock %}
+
+{% block preamble %}
+    <p>This is here to give details into the tokens currently set on this client</p>
+        <a class="btn btn-primary" href="/" role="button">Go Home</a>
+        <a class="btn btn-success" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+ {% endblock %}
+
+ {% block details %}
+    <h3>List of token info for this client</h3>
+    <pre><code>{{ client_data }}</code></pre>
+{% endblock %}

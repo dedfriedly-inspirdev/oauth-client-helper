@@ -2,10 +2,231 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% block title %}OAuth Helper - Add Client{% endblock %}
 
+{% block styles %}
+{{ super() }}
+    <style>
+        .is-hidden {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        /**
+         * Adjust the indices of form fields when removing items.
+         * Special thanks: https://www.rmedgar.com/blog/dynamic-fields-flask-wtf
+         */
+        function adjustIndices(removedIndex) {
+            var $forms = $('.subform');
+
+            $forms.each(function(i) {
+                var $form = $(this);
+                var index = parseInt($form.data('index'));
+                var newIndex = index - 1;
+
+                if (index < removedIndex) {
+                    // Skip
+                    return true;
+                }
+
+                // Change ID in form itself
+                $form.attr('id', $form.attr('id').replace(index, newIndex));
+                $form.data('index', newIndex);
+
+                // Change IDs in form inputs
+                $form.find('input').each(function(j) {
+                    var $item = $(this);
+                    $item.attr('id', $item.attr('id').replace(index, newIndex));
+                    $item.attr('name', $item.attr('name').replace(index, newIndex));
+                });
+            });
+        }
+
+        /**
+         * Remove a subform.
+         */
+        function removeForm() {
+            var $removedForm = $(this).closest('.subform');
+            var removedIndex = parseInt($removedForm.data('index'));
+
+            $removedForm.remove();
+
+            // Update indices
+            adjustIndices(removedIndex);
+        }
+
+        /**
+         * Add a new subform.
+         */
+        function addForm() {
+            var $templateForm = $('#auth_url_qsparams-_-form');
+
+            if (!$templateForm) {
+                console.log('[ERROR] Cannot find template');
+                return;
+            }
+
+            // Get Last index
+            var $lastForm = $('.subform').last();
+
+            var newIndex = 0;
+
+            if ($lastForm.length > 0) {
+                newIndex = parseInt($lastForm.data('index')) + 1;
+            }
+
+            // Maximum of 20 subforms
+            if (newIndex > 20) {
+                console.log('[WARNING] Reached maximum number of elements');
+                return;
+            }
+
+            // Add elements
+            var $newForm = $templateForm.clone();
+
+            $newForm.attr('id', $newForm.attr('id').replace('-_-', '-' + newIndex +'-'));
+            $newForm.data('index', newIndex);
+            $newForm.attr('data-index', newIndex);
+
+            $newForm.find('input').each(function(idx) {
+                var $item = $(this);
+
+                $item.attr('id', $item.attr('id').replace('-_-', '-' + newIndex +'-'));
+                $item.attr('name', $item.attr('name').replace('-_-', '-' + newIndex +'-'));
+            });
+
+            // Append
+            $('#subforms-container').append($newForm);
+            $newForm.addClass('subform');
+            $newForm.removeClass('d-none');
+
+            $newForm.find('.remove').click(removeForm);
+        }
+
+
+        $(document).ready(function() {
+            $('#add').click(addForm);
+            $('.remove').click(removeForm);
+        });
+    </script>
+{% endblock %}
 
 {% block content %}
-    <h1>Add a new client auth connector</h1>
+<div class="container">
+    <div class="row pt-5">{% block my_header %}<h1>NEW API Client Information</h1>{% endblock %}</div>
     <hr>
-    {{ wtf.quick_form(form) }}
-    </hr>
+    {% block preamble %}
+    <h2>Some Info</h2>
+    <a class="btn btn-primary m-2" href="/" role="button">Go Home</a>
+    <p><em>NOTE:</em> The auth query string paramaters accept python format based strings!  Context vars available are:
+        <ul class="list-group">
+            <li class="list-group-item"><code>client_id</code></li>
+            <li class="list-group-item"><code>redirect_url</code></li>
+        </ul>
+    </p>
+    <p><em>NOTE:</em> The auth builder AUTOMATICALLY includes a qs_param of state, do not add one</p>
+    <p>As an example you could set a query string value to something like: <samp>'{client_id}@VALUE.COM'</samp>
+    </p>
+    {% endblock %}
+
+    <hr>
+
+    {% block details %}
+    <h2><em>Form ./</em></h2>
+    <form action="" method="post" class="form" role="form">
+        {{ form.csrf_token() }}
+
+        <div class="form-group">
+            {{ wtf.form_field(form.client_id, class='form-control', placeholder='API Client ID') }}
+        </div>
+
+        <hr>
+        <div class="row">
+            <div class="form-group col-md-6 border-right">
+                {{ wtf.form_field(form.service_name, class='form-control') }}
+            </div>
+            <div class="form-group col-md-6">
+                {{ wtf.form_field(form.other_service, class='form-control') }}
+                <hr>
+                {{ wtf.form_field(form.other_service_name, class='form-control', placeholder='New Service Name') }}
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="row">
+            <div class="form-group col-md-6 border-right">
+                {{ wtf.form_field(form.auth_url, class='form-control') }}
+            </div>
+            <div class="form-group col-md-6" id="subforms-container">
+                <a id="add" href="#subforms-container" class="btn btn-primary">Add QueryString Auth Parameter</a>
+                <p>
+                {% for subform in form.auth_url_qsparams %}
+                <div id="auth_url_qsparams-{{loop.index0}}-form" class="subform" data-index="{{loop.index0}}">
+                    <div class="d-flex flex-md-row justify-content">
+                        <div class="mr-2">
+                            {{ subform.qs_key.label(class_='control-label') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_key(class_='form-control') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_val.label(class_='control-label') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_val(class_='form-control')  }}
+                        </div>
+                        <div>
+                            {# first three entries are protected, dont let them be removed #}
+                            {% if loop.index < 4 %}
+                            <a class="remove btn btn-primary d-none" href="#subforms-container">DEL</a>
+                            {% else %}
+                            <a class="remove btn btn-primary" href="#subforms-container">DEL</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+        </div>
+
+        <hr>
+
+        <div class="form-group">
+            {{ wtf.form_field(form.redirect_url, class='form-control', placeholder='OAuth Callback URL') }}
+        </div>
+
+        <hr>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <hr>
+    </form>
+    {% endblock %}
+</div>
+
+{# Form template #}
+<div id="auth_url_qsparams-_-form" class="d-none">
+    <div class="d-flex flex-md-row justify-content">
+        <div class="mr-2">
+            <label for="auth_url_qsparams-_-qs_key" class="control-label">Key</label>
+        </div>
+        <div class="mr-2">
+            <input id="auth_url_qsparams-_-qs_key" name="auth_url_qsparams-_-qs_key" type="text" value="" class="form-control">
+        </div>
+
+        <div class="mr-2">
+            <label for="auth_url_qsparams-_-qs_val" class="control-label">Value</label>
+        </div>
+        <div class="mr-2">
+            <input id="auth_url_qsparams-_-qs_val" name="auth_url_qsparams-_-qs_val" type="text" class="form-control">
+        </div>
+        <div>
+            <a class="remove btn btn-primary" href="#subforms-container">DEL</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

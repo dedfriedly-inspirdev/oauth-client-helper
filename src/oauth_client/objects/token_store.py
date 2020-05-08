@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from oauth_client import settings
+from oauth_client.config import settings
 from redis import StrictRedis, ConnectionError
 import json
 import logging
@@ -26,7 +26,13 @@ class OAuthTokenStore:
             self._error = e
             logging.warning(f'Redis connection error, please resolve, this module requires redis:  {e.args}')
 
-    def _modify_token_cache(self, client_id, data:dict):
+    def _get_token_cache_data(self, client_id):
+        if self._get_client_id(client_id=client_id) is None:
+            return None
+        else:
+            return self._get_client_id(client_id=client_id).popitem()
+
+    def _modify_token_cache_data(self, client_id, data:dict):
         data.update({'client_id': client_id,
                      'last_mod_time': int(datetime.utcnow().timestamp())
                      }) # forcing these two fields
@@ -60,7 +66,7 @@ class OAuthTokenStore:
         finally:
             lock.release()
 
-    def add_oauth_client(self, client_id:str, auth_url:str, service_name:str=None, redirect_url=settings.OAUTH.REDIRECT_URL):
+    def add_oauth_client(self, client_id:str, auth_url:str, qs_params:dict, service_name:str=None, redirect_url=settings.OAUTH.REDIRECT_URL):
         """
         This is setting up the client_id for an oauth call.  I want this to be extensible so I'm adding
         the ability to provide a service_name for segmenting.
@@ -72,22 +78,27 @@ class OAuthTokenStore:
         data = {
             'client_id': client_id,
             'auth_url': auth_url,
+            'redirect_url': redirect_url,
             'service_name': service_name,
+            'qs_params': qs_params,
             'add_time': int(datetime.utcnow().timestamp()),
             'auth_code_set': False,
             'refresh_token_ttl': None,
-            'acess_token_ttl': None
+            'acess_token_ttl': None,
         }
 
-        self._modify_token_cache(client_id, data)
+        self._modify_token_cache_data(client_id, data)
 
         return self._get_client_id(client_id)
 
-    def auth_code_set(self, client_id):
+    def is_auth_code_set(self, client_id):
         if self._get_client_id(client_id) is not None:
             cache_id, client_dict = self._get_client_id(client_id).popitem()
 
-            return client_dict['auth_code_set']
+            try:
+                return client_dict['auth_code_set']
+            except:
+                return "DATA FORMAT ISSUE - no auth_code_set in token cache"
         else:
             return None
 
@@ -97,22 +108,31 @@ class OAuthTokenStore:
 
             try:
                 client_dict.update({'refresh_token_ttl': self._redis.ttl(f'{self._token_refresh_prepend}:_{client_id}'),
-                                       'acess_token_ttl': self._redis.ttl(f'{self._token_access_prepend}:_{client_id}')})
+                                    'acess_token_ttl': self._redis.ttl(f'{self._token_access_prepend}:_{client_id}')})
             except ConnectionError as e:
                 client_dict.update({'refresh_token_ttl': 'NO MESSAGE BROKER CONN',
-                                       'acess_token_ttl': 'NO MESSAGE BROKER CONN'})
+                                    'acess_token_ttl': 'NO MESSAGE BROKER CONN'})
 
             return client_dict
 
         else:
             return None
     
+    def get_qs_params(self, client_id):
+        if self._get_client_id(client_id=client_id) is not None:
+            cache_id, client_data = self._get_token_cache_data(client_id)
+
+            try:
+                return client_data['qs_params']
+            except:
+                return None
+
     def get_access_code(self, client_id):
         if self._get_client_id(client_id=client_id) is not None:
             self._last = self._redis.get(f'{self._access_code_prepend}:_{client_id}')
             self._redis.delete(f'{self._access_code_prepend}:_{client_id}')
             
-            self._modify_token_cache(client_id, {'auth_code_set': False})
+            self._modify_token_cache_data(client_id, {'auth_code_set': False})
             return self._last
         else:
             logging.info(f"No client id found that matches requested:  {client_id}")
@@ -122,7 +142,7 @@ class OAuthTokenStore:
         if self._get_client_id(client_id=client_id) is not None:
             self._redis.set(f'{self._access_code_prepend}:_{client_id}', access_code, ex=None)
             
-            self._modify_token_cache(client_id, {'auth_code_set': True})
+            self._modify_token_cache_data(client_id, {'auth_code_set': True})
             return True
         else:
             logging.info(f"No client id found that matches requested:  {client_id}")
@@ -157,6 +177,16 @@ class OAuthTokenStore:
         else:
             logging.info(f"No client id found that matches requested:  {client_id}")
             return None
+
+    def redis_key_name(self, key_type:str, client_id:str):
+        if key_type == "access_code":
+            return f'{self._access_code_prepend}:_{client_id}'
+        elif key_type == "token_refresh":
+            return f'{self._token_refresh_prepend}:_{client_id}'
+        elif key_type == "token_access":
+            return f'{self._token_access_prepend}:_{client_id}'
+        else:
+            raise ValueError(f'Unknown key_type "{key_type}", expected ["access_code", "token_refresh", "token_access"]')
 
     @property
     def _list_clients(self, ):
@@ -214,4 +244,3 @@ class OAuthTokenStore:
             os.chmod(self._token_file, 0o600)
         finally:
             return None
-

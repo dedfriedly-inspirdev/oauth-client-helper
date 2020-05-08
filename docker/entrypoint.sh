@@ -43,7 +43,7 @@ case "$1" in
   "auth")
     echo "Starting my flask app"
     sleep 2
-    python ${CODEDIR}/app.py
+    python ${CODEDIR}/wsgi.py
     ;;
   "debug")
     echo "Running open ended proc, drop into image with exec"

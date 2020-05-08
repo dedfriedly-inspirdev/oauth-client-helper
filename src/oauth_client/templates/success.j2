@@ -2,8 +2,13 @@
 {% block title %}OAuth Helper - SUCCESS{% endblock %}
 
 {% block content %}
-    <h1>OAuth Client Helper</h1>
+<div class='container'>
+    <div class="row pt-5"><h1>OAuth Client Helper</h1></div>
     <p>You did it, I'm so proud of you, me...well all of us!</p>
 
+    <h3>New Client Info</h3>
+    <pre><code>{{ client_data }}</code></pre>
+
     <a class="btn btn-primary" href="/" role="button">Go Home</a>
+</div>
 {% endblock %}
