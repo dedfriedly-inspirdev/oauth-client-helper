@@ -6,7 +6,7 @@ This offers a VERY OPINIONATED solution utilizing REDIS (required), a Flask app 
 
 This has the intention of working to create a token cache per user (or per docker instance) that holds all the API authentication information needed for each of the API Clients the user wants.  It's important to view this as user specific because the auth codes generated here give underlying systems access AS THE USER!  Take a moment to understand what you're doing and who has access to what.  Codes are published to redis, BUT they are not sent to a specific USERS redis, so if you have access to "this" redis DB, you'd have access to the codes.  There are no tokens ever stored in the token cache file, so that's nice.
 
-Def check out the python packages [README](src/README.md)
+Def check out the python packages [README](src/oauth_client/README.md)
 
 ## Motivation
 
