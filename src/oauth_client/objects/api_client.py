@@ -19,6 +19,20 @@ class OAuthClient:
         assert self._token_cache._get_client_id(client_id) is not None, "Client API ID not already defined, add this client ID to the token cache first"
         self.client_id = client_id
 
+    def is_auth_code_set(self, ):
+        return self._token_cache.is_auth_code_set(self.client_id)
+
+    @property
+    def auth_code(self, ):
+        my_auth_code = self._token_cache.get_access_code(self.client_id)
+        self._last_auth = my_auth_code
+        return my_auth_code
+    
+    @auth_code.setter
+    def auth_code(self, val):
+        self._token_cache.set_access_code(self.client_id, val)
+        return True
+
     @property
     def client_id(self, ):
         return self._client_id

@@ -34,7 +34,7 @@ setup(
     classifiers=['Programming Language :: Python :: 3', 'License :: OSI Approved :: Apache License 2.0', 'Operating System :: OS Independent'],
     packages=['build.lib.oauth_client', 'build.lib.oauth_client.config', 'build.lib.oauth_client.objects', 'oauth_client', 'oauth_client.build.lib.config', 'oauth_client.build.lib.objects', 'oauth_client.config', 'oauth_client.objects'],
     package_dir={"": "src"},
-    package_data={"oauth_client": ["dist/*.gz", "dist/*.whl", "oauth_client.egg-info/*.txt", "oauth_client_helper.egg-info/*.txt", "templates/*.j2"]},
+    package_data={"oauth_client": ["*.md", "dist/*.gz", "dist/*.whl", "oauth_client.egg-info/*.txt", "oauth_client_helper.egg-info/*.txt", "templates/*.j2"]},
     install_requires=['dynaconf[all]==2.*,>=2.2.3', 'filelock==3.*,>=3.0.12', 'flask==1.*,>=1.1.2', 'flask-bootstrap4==4.*,>=4.0.2', 'flask-talisman==0.*,>=0.7.0', 'flask-wtf==0.*,>=0.14.3', 'pandas==1.*,>=1.0.3', 'pyopenssl==19.*,>=19.1.0', 'redis==3.*,>=3.4.1', 'requests==2.*,>=2.23.0'],
     extras_require={"dev": ["dephell==0.*,>=0.8.3", "ipython==7.*,>=7.13.0"]},
 )

@@ -10,7 +10,7 @@ This has the intention of working to create a token cache per user (or per docke
 
 And now that I have a way to store it, I wanted as simple as possible (few bells/whistles of course) web handler to be able to initiate the OAuth sequence (generate the auth URL + querystring params) and capture the redirect (assuming successful auth).  The web framework here currently runs on 0.0.0.0:8080, however you'd connect over 127.0.0.1:8080 (use the IP versus localhost!)
 
-Def check out the python packages [README](src/oauth_client/README.md)
+Def check out the python packages [README](pypkg_README.rst)
 
 ## Motivation
 
@@ -38,6 +38,20 @@ This includes a default docker-compose setup for launching/running this independ
 
 I would think that typically the python package (under /src) would be imported and used independetly of this example.  You would push in your projects REDIS config and then import the token and client objects.
 
+## Usage Notes
+
+For building, the package utilizes dephell and poetry.  So for development you'd (obv ideally under a venv):
+
+```bash
+pip install poetry
+# this automatically includes development related packages, use --no-dev
+poetry install --no-root
+
+# to build out everything
+poetry build
+dephell deps convert
+```
+
 ## Todos
 
 Oh yeah, this is one of those projects where the guy that posted it opines on know deficiencies.  Red flag for 'eh good enough' code for sure
@@ -47,3 +61,5 @@ Oh yeah, this is one of those projects where the guy that posted it opines on kn
  * Would be nice to allow SSL cert files to be defined via env vars
  * Would be nice to allow IP listening and port in settings
  * Full disclosure, haven't tested building the py pkg just yet
+ * Create more docker entrypoints to allow nearly all functions with a docker run command
+ * Create CLI commands to help support curl/wget system
