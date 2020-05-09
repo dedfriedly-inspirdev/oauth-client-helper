@@ -66,21 +66,54 @@ class OAuthTokenStore:
         finally:
             lock.release()
 
-    def add_oauth_client(self, client_id:str, auth_url:str, qs_params:dict, service_name:str=None, redirect_url=settings.OAUTH.REDIRECT_URL):
+    @classmethod
+    def default_qs_params(klass, endpoint_type:str):
+        if endpoint_type.lower()[0:4] == 'auth':
+            qs_dict = {
+                'response_type': 'code',
+                'client_id': '{client_id}',
+                'redirect_uri': '{redirect_url}',
+                'scope': None,
+                'state': '{state}'
+            }
+        elif endpoint_type.lower()[0:4] == 'acce':
+            qs_dict = {
+                'grant_type': 'authorization_code',
+                'client_id': '{client_id}',
+                'code': '{access_code}',
+                'redirect_uri': '{redirect_url}',
+                'scope': None,
+                'access_type': None
+            }
+        elif endpoint_type.lower()[0:4] == 'refr':
+            qs_dict = {
+                'grant_type': 'refresh_token',
+                'client_id': '{client_id}',
+                'refresh_token': '{refresh_token}',
+                'scope': None,
+            }
+        else:
+            raise ValueError("Unexpected argument 1:{endpoint_type}, require one of ('authorization', 'access' or 'refresh')")
+
+        return qs_dict
+
+    def add_oauth_client(self, client_id:str, auth_endpoint:str, token_endpoint:str, service_name:str=None, redirect_url=settings.OAUTH.REDIRECT_URL):
         """
         This is setting up the client_id for an oauth call.  I want this to be extensible so I'm adding
         the ability to provide a service_name for segmenting.
 
         Note, no data pushed to redis here, this is all local file cache stuff
+
+        TODO:  the endpoint args here are a bit semantic sensitive, add data checks upfront or make it simpler
         """
         assert self._token_file is not None, "No local token file storage set, this is required"
 
         data = {
             'client_id': client_id,
-            'auth_url': auth_url,
+            'auth_endpoint': {**auth_endpoint},
+            'token_endpoint': {**token_endpoint},
             'redirect_url': redirect_url,
             'service_name': service_name,
-            'qs_params': qs_params,
             'add_time': int(datetime.utcnow().timestamp()),
             'auth_code_set': False,
             'refresh_token_ttl': None,
@@ -129,11 +162,12 @@ class OAuthTokenStore:
 
     def get_access_code(self, client_id):
         if self._get_client_id(client_id=client_id) is not None:
-            self._last = self._redis.get(f'{self._access_code_prepend}:_{client_id}')
+            val = self._redis.get(f'{self._access_code_prepend}:_{client_id}')
+            self._last = val
             self._redis.delete(f'{self._access_code_prepend}:_{client_id}')
             
             self._modify_token_cache_data(client_id, {'auth_code_set': False})
-            return self._last
+            return val
         else:
             logging.info(f"No client id found that matches requested:  {client_id}")
             return None

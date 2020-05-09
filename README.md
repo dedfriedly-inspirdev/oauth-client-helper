@@ -2,6 +2,8 @@
 
 This here thing, what is it.  Intended to simplify the creation and authentication of OAuth-able API endpoints.
 
+Using OAuth2.0, reading is good [RFC6749](https://tools.ietf.org/html/rfc6749)
+
 I'm relatively postive something like this MUST exist but this is my curiousity itch and learning something new outcome.
 
 This offers a VERY OPINIONATED solution utilizing REDIS (required), a Flask app and two python objects for token file management and API client generation.  I targetted this for personal development and use, not intended to be multi user or auth secure!
@@ -40,6 +42,8 @@ I would think that typically the python package (under /src) would be imported a
 
 ## Usage Notes
 
+### Dev Notes
+
 For building, the package utilizes dephell and poetry.  So for development you'd (obv ideally under a venv):
 
 ```bash
@@ -50,6 +54,25 @@ poetry install --no-root
 # to build out everything
 poetry build
 dephell deps convert
+```
+
+### How to
+
+Here's some simple answers on how to use the project as docker instance, if you want python specific, go to the [pypkg_READMD](pypkg_README.rst)
+
+```bash
+docker-compose up --detach
+docker-compose logs oauth-helper
+docker-compose exec oauth-helper /usr/bin/env bash -l
+
+# Now you're in on the oauth-helpers bash shell
+user@a2ncaldlj$ cat ~/.oauth*.json
+```
+
+You could modify the docker-compose to expose env vars to customize the setup.  The simplest one would be allowing the token file to be stored in a volume for persistence
+
+```bash
+export OAUTHCLIENT_OAUTH__TOKEN_CACHE=/usr/local/.my_token_cache.json && docker-compose run -v "local_file_cache.token:/usr/local/.my_token_cache.json" oauth-helper
 ```
 
 ## Todos
@@ -63,3 +86,5 @@ Oh yeah, this is one of those projects where the guy that posted it opines on kn
  * Full disclosure, haven't tested building the py pkg just yet
  * Create more docker entrypoints to allow nearly all functions with a docker run command
  * Create CLI commands to help support curl/wget system
+ * Not currently implementing any HTTP Authorization headers for any requests, prolly should offer that option
+ * Not implementing any resource granting thru password credentials

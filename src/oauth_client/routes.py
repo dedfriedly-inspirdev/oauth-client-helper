@@ -40,24 +40,36 @@ def add_client():
     form.service_name.choices = [(x, x) for x in OAuthTokenStore.list_service_names()]
 
     if request.method == 'GET':
-        # Append the default args required in the qsparams
-        form.auth_url_qsparams.append_entry({
-                'qs_key': 'client_id',
-                'qs_val': '{client_id}'
-            })
-        form.auth_url_qsparams.append_entry({
-                'qs_key': 'redirect_uri',
-                'qs_val': '{redirect_url}'
-            })
-        form.auth_url_qsparams.append_entry({
-                'qs_key': 'response_type',
-                'qs_val': 'code'
-            })
+        # Append the default args required for auth
+        for pkey, pval in OAuthTokenStore.default_qs_params('authorization').items():
+            form.auth_url_qsparams.append_entry({
+                    'qs_key': pkey,
+                    'qs_val': pval
+                })
+        for pkey, pval in OAuthTokenStore.default_qs_params('access_token').items():
+            form.token_qsparams.append_entry({
+                    'qs_key': pkey,
+                    'qs_val': pval
+                })
+        for pkey, pval in OAuthTokenStore.default_qs_params('refresh_token').items():
+            form.refresh_token_qsparams.append_entry({
+                    'qs_key': pkey,
+                    'qs_val': pval
+                })
 
     if request.method == 'POST' and form.validate_on_submit():
         client_data = {
             'client_id': form.client_id.data,
-            'auth_url': form.auth_url.data,
+            'auth_endpoint': {
+                'url': form.auth_url.data,
+                'qs_params': { }
+            },
+            'token_endpoint': {
+                'url': form.token_url.data,
+                'use_refresh': form.use_refresh_token.data,
+                'access_params': { },
+                'refresh_params': { },
+            },
             'redirect_url': form.redirect_url.data
         }
 
@@ -66,11 +78,18 @@ def add_client():
         else:
             client_data.update({'service_name': form.service_name.data})
 
-        qs_params = { }
         for q in form.auth_url_qsparams.data:
-            qs_params.update({q['qs_key']: q['qs_val']})
+            if q['qs_val'] is not None:
+                client_data['auth_endpoint']['qs_params'].update({q['qs_key']: q['qs_val']})
 
-        client_data.update({'qs_params': qs_params})
+        for q in form.token_qsparams.data:
+            if q['qs_val'] is not None:
+                client_data['token_endpoint']['access_params'].update({q['qs_key']: q['qs_val']})
+
+        if client_data['token_endpoint']['use_refresh']:
+            for q in form.refresh_token_qsparams.data:
+                if q['qs_val'] is not None:
+                    client_data['token_endpoint']['refresh_params'].update({q['qs_key']: q['qs_val']})
 
         rdata = my_store.add_oauth_client(**client_data)
 
@@ -87,17 +106,20 @@ def client_id_detail(client_id):
 
 @app.route('/client-auth/<client_id>', methods=['GET'])
 def client_init_auth(client_id):
+    from uuid import uuid4
     my_cid = OAuthClient(client_id)
 
     my_cid_info = my_cid.client_info
 
     redirect_url = my_cid_info['redirect_url']
+    state = str(uuid4())
+    save_created_state(client_id, state)
 
     my_qs_params = {}
-    for k, v in my_cid_info['qs_params'].items():
-        my_qs_params[k] = v.format(client_id=client_id, redirect_url=redirect_url)
+    for k, v in my_cid_info['auth_endpoint']['qs_params'].items():
+        my_qs_params[k] = v.format(client_id=client_id, redirect_url=redirect_url, state=state)
 
-    return redirect(make_authorization_url(auth_url=my_cid_info['auth_url'], qs_params=my_qs_params, client_id=client_id))
+    return redirect(make_authorization_url(auth_url=my_cid_info['auth_endpoint']['url'], qs_params=my_qs_params, client_id=client_id))
 
 @app.route('/auth_callback')
 def auth_callback():    
@@ -118,16 +140,6 @@ def auth_callback():
     return render_template('success.j2', client_data={'auth_code': f'...snipped...{code[-15:]}'})
 
 def make_authorization_url(auth_url, qs_params, client_id):
-    # Generate a random string for the state parameter
-    # Save it for use later to prevent xsrf attacks
-    from uuid import uuid4
-    state = str(uuid4())
-    save_created_state(client_id, state)
-    
-    qs_params.update({
-        "state": state,
-    })
-    
     url = f'{auth_url}?{parse.urlencode(qs_params)}'
     return url
 
