@@ -3,15 +3,53 @@
 
 {% block my_header %}
     <h1>OAuth Client Detail Page</h1>
+    {% if messages is not none %}{{messages}}{% endif %}
 {% endblock %}
 
 {% block preamble %}
     <p>This is here to give details into the tokens currently set on this client</p>
-        <a class="btn btn-primary" href="/" role="button">Go Home</a>
-        <a class="btn btn-success" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+    <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+        <div class="btn-group" role="group" aria-label="Auth Button Group">
+            <a class="btn btn-primary mr-1" href="/" role="button">Go Home</a>
+        </div>
+        <div class="btn-group" role="group" aria-label="Auth Button Group">
+            {% if client_data.redis_values.token_access is not none %}
+            <a class="btn btn-outline-warning" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+            {% elif client_data.token_endpoint.use_refresh and client_data.redis_values.token_refresh is not none %}
+            <a class="btn btn-outline-info" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+            {% else %}
+            <a class="btn btn-success" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+            {% endif %}
+        </div>
+        <div class="btn-group" role="group" aria-label="Auth Button Group">
+            {% if client_data.auth_code_set %}
+            <a class="btn btn-success ml-1" href="/client-access/{{ client_id }}" role="button">Get Access Token</a>
+            {% else %}
+            <a class="btn btn-outline-secondary ml-1" href="#" role="button">Get Access Token</a>
+            {% endif %}
+            {% if client_data.token_endpoint.use_refresh and client_data.redis_values.token_refresh is not none %}
+            <a class="btn btn-success mr-1" href="/client-refresh/{{ client_id }}" role="button">Refresh Access Token</a>
+            {% else %}
+            <a class="btn btn-outline-secondary mr-1" href="#" role="button">Refresh Access Token</a>
+            {% endif %}
+        </div>
+    </div>
  {% endblock %}
 
  {% block details %}
     <h3>List of token info for this client</h3>
-    <pre><code>{{ client_data }}</code></pre>
+    <table class="table table-hover w-auto small">
+        <thead>
+            <tr>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
+            </tr>
+        </thead>
+        {% for k, v in client_data.items() %}
+        <tr>
+            <td>{{ k }}</td>
+            <td><pre><code>{{ v | pprint }}</code></pre></td>
+        </tr>
+        {% endfor %}
+    </table>
 {% endblock %}

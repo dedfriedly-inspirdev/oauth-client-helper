@@ -3,7 +3,7 @@ name = "oauth_client"
 packages = [
     { include = 'oauth_client', from='src'},
 ]
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 authors = ["Dedric Friedly <dedric.friedly@inspiredev-llc.com>"]
 repository = 'https://github.com/dedfriedly-inspirdev/oauth-client-helper'

@@ -123,8 +123,10 @@
     <a class="btn btn-primary m-2" href="/" role="button">Go Home</a>
     <p><em>NOTE:</em> The auth query string paramaters accept python format based strings!  Context vars available are:
         <ul class="list-group">
-            <li class="list-group-item"><code>client_id</code></li>
-            <li class="list-group-item"><code>redirect_url</code></li>
+            <li class="list-group-item"><code>client_id</code> :: The API Client ID</li>
+            <li class="list-group-item"><code>redirect_url</code> :: The path for this websites auth_callback</li>
+            <li class="list-group-item"><code>state</code> :: Defaults to a dynamic uuid field, typically dont touch</li>
+            <li class="list-group-item"><code>access_code</code> :: Defaults to a dynamic uuid field, typically dont touch</li>
         </ul>
     </p>
     <p><em>NOTE:</em> The auth builder AUTOMATICALLY includes a qs_param of state, do not add one</p>
@@ -157,13 +159,13 @@
 
         <hr>
 
+        {# Authorization Endpoint Definition #}
         <div class="row">
             <div class="form-group col-md-6 border-right">
                 {{ wtf.form_field(form.auth_url, class='form-control') }}
             </div>
             <div class="form-group col-md-6" id="subforms-container">
-                <a id="add" href="#subforms-container" class="btn btn-primary">Add QueryString Auth Parameter</a>
-                <p>
+                <a id="add" href="#subforms-container" class="btn btn-primary btn-sm mb-2">Add QueryString Auth Parameter</a>
                 {% for subform in form.auth_url_qsparams %}
                 <div id="auth_url_qsparams-{{loop.index0}}-form" class="subform" data-index="{{loop.index0}}">
                     <div class="d-flex flex-md-row justify-content">
@@ -179,19 +181,78 @@
                         <div class="mr-2">
                             {{ subform.qs_val(class_='form-control')  }}
                         </div>
-                        <div>
-                            {# first three entries are protected, dont let them be removed #}
-                            {% if loop.index < 4 %}
-                            <a class="remove btn btn-primary d-none" href="#subforms-container">DEL</a>
-                            {% else %}
-                            <a class="remove btn btn-primary" href="#subforms-container">DEL</a>
-                            {% endif %}
+                        <div class="align-middle">
+                            <a class="remove btn btn-primary btn-sm" href="#subforms-container">DEL</a>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            
+        </div>
+
+        <hr>
+
+        {# Token Endpoint Definition #}
+        <div class="row">
+            <div class="form-group col-md-6 border-right">
+                {{ wtf.form_field(form.token_url, class='form-control') }}
+            </div>
+            <div class="form-group col-md-6" id="subforms-container">
+                <a id="add" href="#subforms-container" class="btn btn-primary btn-sm mb-2">Add QueryString Access Token Parameter</a>
+                {% for subform in form.token_qsparams %}
+                <div id="auth_url_qsparams-{{loop.index0}}-form" class="subform" data-index="{{loop.index0}}">
+                    <div class="d-flex flex-md-row justify-content">
+                        <div class="mr-2">
+                            {{ subform.qs_key.label(class_='control-label') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_key(class_='form-control') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_val.label(class_='control-label') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_val(class_='form-control')  }}
+                        </div>
+                        <div class="align-middle">
+                            <a class="remove btn btn-primary btn-sm" href="#subforms-container">DEL</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Refresh Token #}
+        <div class="row">
+            <div class="form-group col-md-6 border-right">
+                <input type='checkbox' id="use_refresh_token" name="use_refresh_token" data-toggle='collapse' data-target='#refreshQsContainer' aria-expanded="false" aria-controls="refreshQsContainer"> {{ form.use_refresh_token.label }}
+                </input>
+            </div>
+            <div class="form-group col-md-6 collapse" id="refreshQsContainer">
+                <a id="add" href="#subforms-container" class="btn btn-primary btn-sm mb-2">Add QueryString Access Token Parameter</a>
+                {% for subform in form.refresh_token_qsparams %}
+                <div id="auth_url_qsparams-{{loop.index0}}-form" class="subform" data-index="{{loop.index0}}">
+                    <div class="d-flex flex-md-row justify-content">
+                        <div class="mr-2">
+                            {{ subform.qs_key.label(class_='control-label') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_key(class_='form-control') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_val.label(class_='control-label') }}
+                        </div>
+                        <div class="mr-2">
+                            {{ subform.qs_val(class_='form-control')  }}
+                        </div>
+                        <div class="align-middle">
+                            <a class="remove btn btn-primary btn-sm" href="#subforms-container">DEL</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
         <hr>
@@ -225,7 +286,7 @@
             <input id="auth_url_qsparams-_-qs_val" name="auth_url_qsparams-_-qs_val" type="text" class="form-control">
         </div>
         <div>
-            <a class="remove btn btn-primary" href="#subforms-container">DEL</a>
+            <a class="remove btn btn-primary btn-sm" href="#subforms-container">DEL</a>
         </div>
     </div>
 </div>

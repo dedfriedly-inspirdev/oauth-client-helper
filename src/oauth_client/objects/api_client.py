@@ -56,7 +56,7 @@ class OAuthClient:
 
     @property
     def access_token(self, ):
-        return self._token_cache.get_access_code(self.client_id)
+        return self._token_cache.get_access_token(self.client_id)
     
     @access_token.setter
     def access_token(self, val):
