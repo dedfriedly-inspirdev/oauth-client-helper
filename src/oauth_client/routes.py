@@ -7,7 +7,7 @@ from urllib import parse
 from redis import StrictRedis
 from flask import current_app as app
 from flask import session, render_template
-from flask import request, redirect, abort
+from flask import request, redirect, abort, url_for
 # from flask_session import Session
 from oauth_client.config import settings
 from oauth_client.objects import OAuthTokenStore, OAuthClient
@@ -79,16 +79,16 @@ def add_client():
             client_data.update({'service_name': form.service_name.data})
 
         for q in form.auth_url_qsparams.data:
-            if q['qs_val'] is not None:
+            if q['qs_val'] != '':
                 client_data['auth_endpoint']['qs_params'].update({q['qs_key']: q['qs_val']})
 
         for q in form.token_qsparams.data:
-            if q['qs_val'] is not None:
+            if q['qs_val'] != '':
                 client_data['token_endpoint']['access_params'].update({q['qs_key']: q['qs_val']})
 
         if client_data['token_endpoint']['use_refresh']:
             for q in form.refresh_token_qsparams.data:
-                if q['qs_val'] is not None:
+                if q['qs_val'] != '':
                     client_data['token_endpoint']['refresh_params'].update({q['qs_key']: q['qs_val']})
 
         rdata = my_store.add_oauth_client(**client_data)
@@ -102,7 +102,7 @@ def add_client():
 def client_id_detail(client_id):
     my_cid = OAuthClient(client_id)
 
-    return render_template('client_detail.j2', client_id=client_id, client_data=json.dumps(my_cid.client_info, indent=4, separators=(',', ': ')))
+    return render_template('client_detail.j2', client_id=client_id, client_data=my_cid.client_info)
 
 @app.route('/client-auth/<client_id>', methods=['GET'])
 def client_init_auth(client_id):
@@ -120,6 +120,48 @@ def client_init_auth(client_id):
         my_qs_params[k] = v.format(client_id=client_id, redirect_url=redirect_url, state=state)
 
     return redirect(make_authorization_url(auth_url=my_cid_info['auth_endpoint']['url'], qs_params=my_qs_params, client_id=client_id))
+
+@app.route('/client-access/<client_id>', methods=['GET'])
+def client_access_token(client_id):
+    import requests
+    my_cid = OAuthClient(client_id)
+    my_cid_info = my_cid.client_info
+
+    # get the vars for the format context
+    # client_id alread exits
+    access_code = my_cid.auth_code
+    assert access_code is not None, "No code found for this client, required"
+
+    redirect_url = my_cid_info['redirect_url']
+
+    # now build out QS params sub'ing values
+    my_qs_params = {}
+    for k, v in my_cid_info['token_endpoint']['access_params'].items():
+        my_qs_params[k] = v.format(client_id=client_id, redirect_url=redirect_url, access_code=access_code)
+
+    req_headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0',
+        'Accept-Enconding': 'gzip',
+        'Accept-Language': 'en-us',
+    }
+
+    resp = requests.post(my_cid_info['token_endpoint']['url'], data=my_qs_params, headers=req_headers)
+
+    resp_data = json.loads(resp.text)
+
+    my_cid.access_token = {
+        'token': resp_data['access_token'],
+        'ttl': resp_data['expires_in']
+    }
+
+    if 'refresh_token' in resp_data:
+        my_cid.refresh_token = {
+            'token': resp_data['refresh_token'],
+            'ttl': resp_data['refresh_token_expires_in']
+        }
+
+    return redirect(url_for('client_id_detail', client_id=client_id))
 
 @app.route('/auth_callback')
 def auth_callback():    
