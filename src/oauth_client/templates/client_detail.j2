@@ -3,6 +3,7 @@
 
 {% block my_header %}
     <h1>OAuth Client Detail Page</h1>
+    {% if messages is not none %}{{messages}}{% endif %}
 {% endblock %}
 
 {% block preamble %}
@@ -12,7 +13,13 @@
             <a class="btn btn-primary mr-1" href="/" role="button">Go Home</a>
         </div>
         <div class="btn-group" role="group" aria-label="Auth Button Group">
+            {% if client_data.redis_values.token_access is not none %}
+            <a class="btn btn-outline-warning" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+            {% elif client_data.token_endpoint.use_refresh and client_data.redis_values.token_refresh is not none %}
+            <a class="btn btn-outline-info" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+            {% else %}
             <a class="btn btn-success" href="/client-auth/{{ client_id }}" role="button">Auth</a>
+            {% endif %}
         </div>
         <div class="btn-group" role="group" aria-label="Auth Button Group">
             {% if client_data.auth_code_set %}

@@ -86,5 +86,7 @@ Oh yeah, this is one of those projects where the guy that posted it opines on kn
  * Full disclosure, haven't tested building the py pkg just yet
  * Create more docker entrypoints to allow nearly all functions with a docker run command
  * Create CLI commands to help support curl/wget system
- * Not currently implementing any HTTP Authorization headers for any requests, prolly should offer that option
+ * Not currently implementing any HTTP Authorization headers for any AUTHORIZATION  (eg HTTP basic auth) requests, prolly should offer that option
  * Not implementing any resource granting thru password credentials
+ * Only really focused on Bearer access token_type, per RFC, the OAuth-HTTP-MAC is another option, not done here yet
+ * Need to improve (read as: create) proper success or failure notifications for the events

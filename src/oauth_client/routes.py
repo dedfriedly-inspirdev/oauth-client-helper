@@ -99,10 +99,10 @@ def add_client():
 
 
 @app.route('/client-detail/<client_id>', methods=['GET'])
-def client_id_detail(client_id):
+def client_id_detail(client_id, messages=None):
     my_cid = OAuthClient(client_id)
 
-    return render_template('client_detail.j2', client_id=client_id, client_data=my_cid.client_info)
+    return render_template('client_detail.j2', client_id=client_id, client_data=my_cid.client_info, messages=messages)
 
 @app.route('/client-auth/<client_id>', methods=['GET'])
 def client_init_auth(client_id):
@@ -161,7 +161,43 @@ def client_access_token(client_id):
             'ttl': resp_data['refresh_token_expires_in']
         }
 
-    return redirect(url_for('client_id_detail', client_id=client_id))
+    return redirect(url_for('client_id_detail', client_id=client_id, messages='<h2>Got new tokens</h2>'))
+
+@app.route('/client-refresh/<client_id>', methods=['GET'])
+def client_refresh_token(client_id):
+    import requests
+    my_cid = OAuthClient(client_id)
+    my_cid_info = my_cid.client_info
+
+    # get the vars for the format context
+    # client_id alread exits
+    refresh_token = my_cid.refresh_token
+    assert refresh_token is not None, "No code found for this client, required"
+
+    redirect_url = my_cid_info['redirect_url']
+
+    # now build out QS params sub'ing values
+    my_qs_params = {}
+    for k, v in my_cid_info['token_endpoint']['refresh_params'].items():
+        my_qs_params[k] = v.format(client_id=client_id, redirect_url=redirect_url, refresh_token=refresh_token)
+
+    req_headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0',
+        'Accept-Enconding': 'gzip',
+        'Accept-Language': 'en-us',
+    }
+
+    resp = requests.post(my_cid_info['token_endpoint']['url'], data=my_qs_params, headers=req_headers)
+
+    resp_data = json.loads(resp.text)
+
+    my_cid.access_token = {
+        'token': resp_data['access_token'],
+        'ttl': resp_data['expires_in']
+    }
+
+    return redirect(url_for('client_id_detail', client_id=client_id, messages='<h2>Updated Access Token</h2>'))
 
 @app.route('/auth_callback')
 def auth_callback():    
